@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://b4vxverj43j1x"]
+
+[ext_resource type="Texture2D" uid="uid://c3sa4kd86jx8j" path="res://assets/sprites/fisherman/fisherman-test.png" id="1_qi4p5"]
+[ext_resource type="Script" uid="uid://7ixit0isp5t5" path="res://scripts/fisherman.gd" id="1_s4xb6"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_s4xb6"]
+radius = 27.0
+height = 138.0
+
+[node name="Fisherman" type="CharacterBody2D" unique_id=932246881]
+script = ExtResource("1_s4xb6")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1262450689]
+texture = ExtResource("1_qi4p5")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1739787825]
+shape = SubResource("CapsuleShape2D_s4xb6")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=149483639]
+position = Vector2(0, -100)
+zoom = Vector2(0.76, 0.76)

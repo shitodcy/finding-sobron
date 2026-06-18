@@ -1,0 +1,101 @@
+[gd_scene format=3 uid="uid://ca5gxoimwx1ri"]
+
+[ext_resource type="Script" uid="uid://b0fwgcu3hq1ws" path="res://scripts/boat.gd" id="1_jw4ub"]
+[ext_resource type="Texture2D" uid="uid://dkt1dh01uldiy" path="res://assets/sprites/boat/boat-1-test.png" id="2_dr53j"]
+[ext_resource type="AudioStream" uid="uid://cu5qimxioq86w" path="res://assets/sound effect/engine/engine-idle.wav" id="3_dr53j"]
+[ext_resource type="AudioStream" uid="uid://by0otnon3ipcr" path="res://assets/sound effect/engine/engine-start.wav" id="4_ewwb0"]
+[ext_resource type="AudioStream" uid="uid://4kc535qe4q34" path="res://assets/sound effect/engine/engine-stop.wav" id="5_ml1af"]
+
+[sub_resource type="Curve" id="Curve_dr53j"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ta61o"]
+size = Vector2(50.875, 40.75)
+
+[node name="Boat" type="CharacterBody2D" unique_id=1886834375]
+script = ExtResource("1_jw4ub")
+
+[node name="VisualRoot" type="Node2D" parent="." unique_id=1999999999]
+
+[node name="Sprite2D" type="Sprite2D" parent="VisualRoot" unique_id=45553234]
+position = Vector2(0, -36)
+scale = Vector2(0.27891162, 0.27891156)
+texture = ExtResource("2_dr53j")
+
+[node name="DriverSeat" type="Marker2D" parent="VisualRoot" unique_id=36947993]
+position = Vector2(-93, -115)
+
+[node name="ExitPoint" type="Marker2D" parent="VisualRoot" unique_id=1985442717]
+position = Vector2(-86, -122)
+
+[node name="WakeParticles" type="CPUParticles2D" parent="VisualRoot" unique_id=1888800706]
+position = Vector2(173, 10)
+amount = 100
+lifetime = 6.0
+direction = Vector2(-98.14, 0)
+spread = 13.59
+gravity = Vector2(0, 0)
+initial_velocity_min = 50.0
+initial_velocity_max = 50.0
+scale_amount_max = 5.0
+
+[node name="PropellerParticles" type="CPUParticles2D" parent="VisualRoot" unique_id=1374644280]
+position = Vector2(-181, 31)
+amount = 100
+lifetime = 5.0
+direction = Vector2(-98.14, 0.925)
+spread = 5.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 10.0
+initial_velocity_max = 100.0
+scale_amount_min = 0.0
+scale_amount_max = 15.0
+scale_amount_curve = SubResource("Curve_dr53j")
+
+[node name="EngineExhaustParticles" type="CPUParticles2D" parent="VisualRoot" unique_id=2000000003]
+position = Vector2(-200, -86)
+amount = 20
+lifetime = 5.0
+randomness = 1.0
+lifetime_randomness = 1.0
+direction = Vector2(-1, 0)
+spread = 15.0
+gravity = Vector2(0, -20)
+initial_velocity_min = 5.0
+initial_velocity_max = 20.0
+scale_amount_max = 10.0
+color = Color(0.4724152, 0.4724152, 0.4724151, 1)
+
+[node name="MotionRoot" type="Node2D" parent="." unique_id=1394737102]
+
+[node name="BoardingArea" type="Area2D" parent="MotionRoot" unique_id=1612407237]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="MotionRoot/BoardingArea" unique_id=747424294]
+position = Vector2(-98, -48)
+shape = SubResource("RectangleShape2D_ta61o")
+debug_color = Color(0.78653085, 0.43251288, 0, 0.41960785)
+
+[node name="DeckArea" type="Area2D" parent="MotionRoot" unique_id=1266706375]
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="MotionRoot/DeckArea" unique_id=1373245454]
+position = Vector2(20, -5)
+polygon = PackedVector2Array(-166.125, 20.75, 148.875, 20.75, 165.875, -21.25, -166.125, -21.25)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="." unique_id=1824871254]
+position = Vector2(0, 26)
+polygon = PackedVector2Array(-146, -10, 169, -10, 202, -94, 180, -94, 162, -53, -124, -53, -124, -94, -146, -94)
+
+[node name="EngineIdle" type="AudioStreamPlayer2D" parent="." unique_id=1746198058]
+stream = ExtResource("3_dr53j")
+
+[node name="EngineStart" type="AudioStreamPlayer2D" parent="." unique_id=993078304]
+stream = ExtResource("4_ewwb0")
+
+[node name="EngineStop" type="AudioStreamPlayer2D" parent="." unique_id=735731697]
+stream = ExtResource("5_ml1af")
+
+[connection signal="body_entered" from="MotionRoot/BoardingArea" to="." method="_on_boarding_area_body_entered"]
+[connection signal="body_exited" from="MotionRoot/BoardingArea" to="." method="_on_boarding_area_body_exited"]
+[connection signal="body_entered" from="MotionRoot/DeckArea" to="." method="_on_deck_area_body_entered"]
+[connection signal="body_exited" from="MotionRoot/DeckArea" to="." method="_on_deck_area_body_exited"]

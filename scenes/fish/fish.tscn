@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://v4jqyupv6nvh"]
+
+[ext_resource type="Script" uid="uid://cbkqdashgy4oj" path="res://scripts/fish.gd" id="1_r17d5"]
+
+[node name="Fish" type="CharacterBody2D" unique_id=501950793]
+script = ExtResource("1_r17d5")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=88022548]
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1187603103]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=990070022]

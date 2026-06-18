@@ -1,0 +1,17 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://cl6ev6iy3xvgb"]
+
+[ext_resource type="Shader" path="res://shaders/ocean_gradient.gdshader" id="1_h0b2r"]
+
+[resource]
+resource_local_to_scene = false
+shader = ExtResource("1_h0b2r")
+shader_parameter/zone_1_end_ratio = 0.228
+shader_parameter/zone_2_end_ratio = 0.571
+shader_parameter/depth_1_end_ratio = 0.20
+shader_parameter/depth_2_end_ratio = 0.50
+shader_parameter/color_depth_1 = Color(0.22, 0.62, 0.82, 1)
+shader_parameter/color_depth_2 = Color(0.08, 0.32, 0.58, 1)
+shader_parameter/color_depth_3 = Color(0.01, 0.04, 0.12, 1)
+shader_parameter/zone_1_tint = Color(1, 1, 1, 1)
+shader_parameter/zone_2_tint = Color(0.78, 0.88, 0.82, 1)
+shader_parameter/zone_3_tint = Color(0.48, 0.42, 0.62, 1)

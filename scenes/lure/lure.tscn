@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://csjjt8ksjmhwp"]
+
+[ext_resource type="Script" uid="uid://cc137ychgd4c7" path="res://scripts/lure.gd" id="1_pm8ng"]
+
+[node name="Lure" type="Node2D" unique_id=1859527408]
+script = ExtResource("1_pm8ng")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=393069307]
+
+[node name="Area2D" type="Area2D" parent="." unique_id=938987730]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1056518502]
