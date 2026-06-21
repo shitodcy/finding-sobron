@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" uid="uid://cc137ychgd4c7" path="res://scripts/lure.gd" id="1_pm8ng"]
 
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_pm8ng"]
+
 [node name="Lure" type="Node2D" unique_id=1859527408]
 script = ExtResource("1_pm8ng")
 
@@ -10,3 +12,4 @@ script = ExtResource("1_pm8ng")
 [node name="Area2D" type="Area2D" parent="." unique_id=938987730]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1056518502]
+shape = SubResource("CapsuleShape2D_pm8ng")

@@ -2,6 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://c3sa4kd86jx8j" path="res://assets/sprites/fisherman/fisherman-test.png" id="1_qi4p5"]
 [ext_resource type="Script" uid="uid://7ixit0isp5t5" path="res://scripts/fisherman.gd" id="1_s4xb6"]
+[ext_resource type="Texture2D" uid="uid://ccd3itndym82y" path="res://assets/sprites/fishing rod/fishing-rod-1-test.png" id="3_p01dp"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_s4xb6"]
 radius = 27.0
@@ -19,3 +20,9 @@ shape = SubResource("CapsuleShape2D_s4xb6")
 [node name="Camera2D" type="Camera2D" parent="." unique_id=149483639]
 position = Vector2(0, -100)
 zoom = Vector2(0.76, 0.76)
+
+[node name="DummyRod" type="Sprite2D" parent="." unique_id=367699997]
+visible = false
+position = Vector2(15, 0)
+scale = Vector2(0.3148148, 0.11078428)
+texture = ExtResource("3_p01dp")

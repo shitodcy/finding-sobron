@@ -70,7 +70,7 @@ func handle_on_foot(delta):
 	if direction != 0:
 		$Sprite2D.flip_h = direction < 0
 	
-	if Input.is_action_just_pressed("jump") and is_on_floor():
+	if Input.is_action_just_pressed("jump") and is_on_floor() and standing_boat == null:
 		velocity.y = jump_force
 	
 	if Input.is_action_just_pressed("interact") and nearby_boat != null:
@@ -113,32 +113,19 @@ func exit_boat():
 	current_state = PlayerState.ON_FOOT
 	current_boat = null
 	
-	# ── Temporary Collision Bypass ──
-	# The player exits at the boat's ExitPoint, but spawning with collision
-	# enabled can cause the player to physically bump the boat, transferring
-	# momentum and creating a ghost-throttle impulse.
-	#
-	# Solution: zero out collision layers for 0.2s so the player phases out
-	# cleanly, then restore them via timer.
 	collision_layer = 0
 	collision_mask = 0
 	if has_node("CollisionShape2D"):
 		$CollisionShape2D.set_deferred("disabled", false)
 	
-	# Restore collision after a short grace period
 	get_tree().create_timer(0.2).timeout.connect(_restore_collision)
 	
-	# Transfer only horizontal momentum — kill vertical to prevent fall damage.
-	# This treats positive AND negative velocity identically (symmetric).
 	velocity = Vector2(boat_momentum.x * 0.9, -50.0)
-	
-	# Do NOT call move_and_slide() — let the next physics frame handle it
-	# with collision already in the correct bypass state.
 
+# PASTIKAN BARIS DI BAWAH INI BERADA DI PALING KIRI (TIDAK MASUK KE DALAM INDENTASI exit_boat)
 func _restore_collision() -> void:
 	collision_layer = 1
 	collision_mask = 1
-
 # ── DECK AREA CALLBACKS (called by boat.gd) ──
 
 func _on_deck_entered(boat_node) -> void:

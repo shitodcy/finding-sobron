@@ -12,6 +12,7 @@
 [ext_resource type="Script" uid="uid://dkugl8gxu7jpv" path="res://scripts/ocean_mesh_foreground.gd" id="12_fgmesh"]
 [ext_resource type="Material" path="res://materials/sky_gradient.tres" id="13_sky"]
 [ext_resource type="PackedScene" uid="uid://ckjvgrj5x77bq" path="res://scenes/hud/hud.tscn" id="13_td3fc"]
+[ext_resource type="PackedScene" uid="uid://csjjt8ksjmhwp" path="res://scenes/lure/lure.tscn" id="14_216mg"]
 [ext_resource type="Material" path="res://materials/procedural_dirt.tres" id="14_dirt"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_0owhc"]
@@ -147,6 +148,13 @@ position = Vector2(-270, -233)
 position = Vector2(232, -79)
 
 [node name="HUD" parent="." unique_id=692969924 instance=ExtResource("13_td3fc")]
+
+[node name="FishingLine" type="Line2D" parent="." unique_id=780133755]
+texture_filter = 1
+width = 1.0
+default_color = Color(0.9999996, 0.9855903, 0.79384863, 0.7411765)
+
+[node name="Lure" parent="." unique_id=1859527408 instance=ExtResource("14_216mg")]
 
 [connection signal="pressed" from="HUD/Control/PutarBalikButton" to="Boat" method="trigger_u_turn"]
 
