@@ -13,16 +13,6 @@ var nearby_boat = null
 var current_boat = null
 var standing_boat = null
 
-# ── Deck Collision Exception ──
-# When the player stands on the boat's deck, their CharacterBody2D gravity
-# pushes down on the boat, forcing it below equilibrium depth. This causes
-# the spring-damper to compute extreme displacement, triggering a phantom
-# horizontal velocity that feeds into the engine audio pitch (RPM runaway).
-#
-# The solution: when standing_boat is set, we disable collision between
-# the player and the boat via layer/mask manipulation and manually
-# enforce the player's Y position to track the deck surface.
-
 @export var move_speed := 200.0
 @export var jump_force := -350.0
 
@@ -37,30 +27,25 @@ func _physics_process(delta):
 		handle_driving(delta)
 
 func handle_on_foot(delta):
-	# Read input once at the top for use in both branches
+	# Ambil input axis di awal
 	var direction = Input.get_axis("move_left", "move_right")
 	
 	# ── DECK GRAVITY ISOLATION ──
-	# When on the boat deck, the player must NOT apply downward force to the boat.
-	# Strategy:
-	#   1. Zero out gravity accumulation so the player doesn't push the boat down
-	#   2. Remove the boat from our collision mask so move_and_slide transfers no impulse
-	#   3. Manually snap Y position to the boat's surface
 	if standing_boat != null:
-		# No gravity while on deck
+		# Matikan akumulasi gravitasi agar tidak membebani pegas perahu
 		velocity.y = 0.0
 		
-		# Remove the boat (layer 1) from our collision mask
+		# Singkirkan perahu (layer 1) dari collision mask agar tidak mentransfer impulse liar
 		if _saved_collision_mask != 0:
 			collision_mask = _saved_collision_mask & ~1
 		
-		# Track the boat's deck surface so the player visually stays on deck
+		# Kunci posisi Y karakter mengikuti permukaan dek perahu
 		global_position.y = standing_boat.global_position.y - 30.0
 		
-		# Sync horizontal velocity with the boat
+		# Sinkronisasikan kecepatan horizontal karakter dengan perahu
 		velocity.x = (direction * move_speed) + (standing_boat.velocity.x * 0.8)
 	else:
-		# Restore normal gravity and full collision when not on deck
+		# Kembalikan konfigurasi fisik normal saat berada di luar dek perahu
 		if _saved_collision_mask != 0 and collision_mask != 1:
 			collision_mask = 1
 		if not is_on_floor():
@@ -84,13 +69,14 @@ func handle_driving(_delta):
 	global_position = current_boat.get_driver_seat_position()
 	global_rotation = current_boat.get_boat_rotation()
 	
-	if Input.is_action_just_pressed("interact"):
+	# Penyederhanaan: Keluar dari kemudi bisa menggunakan tombol Interact (E) maupun Jump (Spasi)
+	if Input.is_action_just_pressed("interact") or Input.is_action_just_pressed("jump"):
 		exit_boat()
 
 func enter_boat():
 	if nearby_boat == null: return
 	
-	# Save collision state before disabling
+	# Simpan status fisik sebelum dinonaktifkan
 	_saved_collision_layer = collision_layer
 	_saved_collision_mask = collision_mask
 	
@@ -113,20 +99,24 @@ func exit_boat():
 	current_state = PlayerState.ON_FOOT
 	current_boat = null
 	
-	collision_layer = 0
-	collision_mask = 0
-	if has_node("CollisionShape2D"):
-		$CollisionShape2D.set_deferred("disabled", false)
-	
-	get_tree().create_timer(0.2).timeout.connect(_restore_collision)
-	
-	velocity = Vector2(boat_momentum.x * 0.9, -50.0)
-
-# PASTIKAN BARIS DI BAWAH INI BERADA DI PALING KIRI (TIDAK MASUK KE DALAM INDENTASI exit_boat)
-func _restore_collision() -> void:
+	# PERBAIKAN BUG: Langsung pulihkan collision secara instan tanpa jeda timer 0.2 detik
+	# Hal ini mencegah karakter amblas menembus lantai dek kapal yang memicu lonjakan gaya fisik liar
 	collision_layer = 1
 	collision_mask = 1
-# ── DECK AREA CALLBACKS (called by boat.gd) ──
+	if has_node("CollisionShape2D"):
+		$CollisionShape2D.disabled = false
+	
+	# Netralkan gaya gravitasi vertikal saat melompat keluar agar transisi mulus
+	velocity = Vector2(boat_momentum.x * 0.9, 0.0)
+
+func _restore_collision() -> void:
+	# Fungsi pembantu bawaan dipertahankan sebagai cadangan aman sistem
+	collision_layer = 1
+	collision_mask = 1
+	if has_node("CollisionShape2D"):
+		$CollisionShape2D.set_deferred("disabled", false)
+
+# ── DECK AREA CALLBACKS ──
 
 func _on_deck_entered(boat_node) -> void:
 	standing_boat = boat_node
@@ -135,4 +125,3 @@ func _on_deck_entered(boat_node) -> void:
 
 func _on_deck_exited() -> void:
 	standing_boat = null
-	# Collision layers will be restored naturally in handle_on_foot

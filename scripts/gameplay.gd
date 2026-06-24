@@ -14,19 +14,39 @@ var current_state = State.SAILING
 var cast_power := 0.0
 var max_cast_power := 600.0
 var charging := false
-
 var is_fishing_mode := false
-var f_key_was_pressed := false 
+var power_direction := 1 
+
+@export_category("UI References")
+@export var casting_bar: ProgressBar
+@export var result_panel: Control
+
+@export_category("Fishing Settings")
+# Sesuaikan angka ini di Inspector Godot untuk menurunkan batas air!
+@export var water_level_offset: float = 120.0 
+@export var retrieve_speed: float = 250.0
 
 @onready var lure = get_node_or_null("Lure")
 @onready var fisherman = get_node_or_null("Fisherman")
 @onready var fishing_line = get_node_or_null("FishingLine")
-@onready var boat = get_node_or_null("Boat") # Tambahan referensi kapal
+@onready var boat = get_node_or_null("Boat")
 
 func _ready():
+	if casting_bar == null:
+		casting_bar = get_tree().current_scene.find_child("CastingBar", true, false)
+	if result_panel == null:
+		result_panel = get_tree().current_scene.find_child("ResultPanel", true, false)
+		
+	if casting_bar == null:
+		push_warning("CastingBar tidak ditemukan! Pastikan node ProgressBar bernama persis 'CastingBar'.")
+		
+	if fisherman and not fisherman.has_node("DummyRod"):
+		push_warning("Peringatan Visual: Node 'DummyRod' tidak ditemukan di dalam Fisherman.")
+		
 	if lure: lure.visible = false
 	if fishing_line: fishing_line.visible = false
-	print("Sistem Siap. Tekan tombol 'F' di atas kapal untuk Menyalakan Mode Memancing.")
+	if casting_bar: casting_bar.visible = false
+	if result_panel: result_panel.visible = false
 
 func _process(delta):
 	if lure == null or fisherman == null:
@@ -42,20 +62,17 @@ func _process(delta):
 	else:
 		if fishing_line: fishing_line.visible = false
 
-	# Toggle Mode Memancing (Tombol F)
-	var f_key_is_pressed = Input.is_physical_key_pressed(KEY_F)
-	if f_key_is_pressed and not f_key_was_pressed:
-		toggle_fishing_mode()
-	f_key_was_pressed = f_key_is_pressed
-
-	# CONSTRAINT OTOMATIS: Menggunakan fungsi baru yang lebih kebal bug
-	if is_fishing_mode and not is_ready_to_fish():
-		if current_state != State.SAILING:
-			print("Pancingan terputus! Karakter berpindah dari posisi dek.")
+	var can_fish = is_ready_to_fish()
+	
+	if can_fish and not is_fishing_mode and current_state == State.SAILING:
+		is_fishing_mode = true
+		if fisherman.has_node("DummyRod"): 
+			fisherman.get_node("DummyRod").visible = true
+			
+	elif not can_fish and is_fishing_mode:
 		matikan_mode_memancing()
 		batalkan_pancingan()
 
-	# --- STATE MACHINE MEMANCING ---
 	if current_state == State.SAILING:
 		if not is_fishing_mode:
 			return
@@ -63,32 +80,50 @@ func _process(delta):
 		if Input.is_action_just_pressed("cast"):
 			charging = true
 			cast_power = 0.0
+			power_direction = 1
+			if casting_bar:
+				casting_bar.visible = true
+				casting_bar.max_value = max_cast_power
+				casting_bar.value = 0.0
 			
 		if Input.is_action_pressed("cast") and charging:
-			cast_power += 500 * delta
-			cast_power = min(cast_power, max_cast_power)
+			cast_power += 600.0 * delta * power_direction
+			if cast_power >= max_cast_power:
+				cast_power = max_cast_power
+				power_direction = -1
+			elif cast_power <= 0.0:
+				cast_power = 0.0
+				power_direction = 1
+				
+			if casting_bar:
+				casting_bar.value = cast_power
 			
 		if Input.is_action_just_released("cast") and charging:
 			charging = false
+			if casting_bar:
+				casting_bar.visible = false
 			start_cast()
 
 	elif current_state == State.SINKING or current_state == State.RETRIEVE:
+		# MEKANIK MENARIK (RETRIEVE): Tahan Klik Kiri Lagi!
 		if Input.is_action_pressed("cast"):
 			current_state = State.RETRIEVE
+			lure.is_retrieving = true
 			lure.is_sinking = false
 			
 			var rod_tip = get_rod_tip_position()
 			var pull_dir = (rod_tip - lure.global_position).normalized()
 			
-			lure.global_position += pull_dir * 180 * delta
+			var current_speed = retrieve_speed * lure.drag_multiplier
+			lure.global_position += pull_dir * current_speed * delta
 			
-			if lure.global_position.distance_to(rod_tip) < 20:
-				print("Umpan berhasil ditarik penuh. Siap lempar kembali.")
+			# Jika umpan ditarik sampai ke tangan, pancingan di-reset dan siap lempar ulang
+			if lure.global_position.distance_to(rod_tip) < 20.0:
 				batalkan_pancingan()
 		else:
 			current_state = State.SINKING
+			lure.is_retrieving = false
 			lure.is_sinking = true
-			lure.velocity = Vector2.ZERO 
 
 func start_cast():
 	current_state = State.CASTING
@@ -98,51 +133,30 @@ func start_cast():
 	var throw_direction = -1 if is_facing_left else 1
 	
 	lure.global_position = get_rod_tip_position()
-	lure.velocity = Vector2(cast_power * throw_direction, -200)
+	lure.velocity = Vector2(cast_power * throw_direction, -150.0)
+	lure.is_sinking = false
+	lure.is_retrieving = false
 	
-	await get_tree().create_timer(0.5).timeout
-	
-	current_state = State.SINKING
-	lure.velocity = Vector2.ZERO
-	lure.is_sinking = true
+	lure.target_water_y = fisherman.global_position.y + water_level_offset
 
-# --- FUNGSI PEMBANTU (HELPER) ---
-
-# Fungsi baru untuk mengecek posisi valid yang anti-bug
 func is_ready_to_fish() -> bool:
 	if fisherman == null: return false
 	if fisherman.current_state == fisherman.PlayerState.DRIVING: return false
 	
-	# Validasi 1: Sensor area bawaan Godot
 	if fisherman.standing_boat != null or fisherman.nearby_boat != null:
 		return true
 		
-	# Validasi 2: Failsafe jarak (backup jika sensor Godot ter-reset)
 	if boat != null:
 		var jarak_ke_kapal = fisherman.global_position.distance_to(boat.global_position)
-		if jarak_ke_kapal < 150.0: # Radius toleransi pemain masih berada di kapal
+		if jarak_ke_kapal < 150.0:
 			return true
 			
 	return false
 
-func toggle_fishing_mode():
-	if not is_ready_to_fish():
-		print("PENGAMAN: Tidak bisa memancing! Anda harus berada di atas dek kapal.")
-		return
-		
-	is_fishing_mode = !is_fishing_mode
-	
-	if is_fishing_mode:
-		print("MODE MEMANCING ON: Joran disiapkan.")
-		if fisherman.has_node("DummyRod"): fisherman.get_node("DummyRod").visible = true
-	else:
-		matikan_mode_memancing()
-		batalkan_pancingan()
-
 func matikan_mode_memancing():
 	is_fishing_mode = false
-	print("MODE MEMANCING OFF: Joran disimpan.")
-	if fisherman.has_node("DummyRod"): fisherman.get_node("DummyRod").visible = false
+	if fisherman and fisherman.has_node("DummyRod"): 
+		fisherman.get_node("DummyRod").visible = false
 
 func batalkan_pancingan():
 	current_state = State.SAILING
@@ -150,6 +164,7 @@ func batalkan_pancingan():
 	if lure:
 		lure.visible = false
 		lure.is_sinking = false
+		lure.is_retrieving = false
 		lure.velocity = Vector2.ZERO
 	if fishing_line:
 		fishing_line.visible = false
@@ -166,3 +181,31 @@ func update_fishing_line():
 	fishing_line.clear_points()
 	fishing_line.add_point(get_rod_tip_position())
 	fishing_line.add_point(lure.global_position)
+	
+	match current_state:
+		State.SINKING:
+			fishing_line.default_color = Color.WHITE
+		State.RETRIEVE:
+			fishing_line.default_color = Color.ORANGE
+		State.STRIKE:
+			fishing_line.default_color = Color.RED
+		_:
+			fishing_line.default_color = Color.WHITE
+
+func _on_fish_strike(fish_node):
+	current_state = State.STRIKE
+	
+	await get_tree().create_timer(1.2).timeout
+	tampilkan_result(fish_node)
+
+func tampilkan_result(fish_node):
+	current_state = State.RESULT
+	
+	if is_instance_valid(fish_node):
+		fish_node.queue_free()
+		
+	batalkan_pancingan()
+	matikan_mode_memancing()
+	
+	if result_panel:
+		result_panel.visible = true
